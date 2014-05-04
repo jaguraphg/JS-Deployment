@@ -26,6 +26,7 @@ import java.awt.FontMetrics;
 
 import java.util.Properties;
 import java.util.ArrayList;
+import java.awt.Dimension;
 
 public class Byzak extends JFrame {
 
@@ -92,6 +93,7 @@ public class Byzak extends JFrame {
 
 		tableDeployPlanModel = new DefaultTableModel(0, DeployOrganizations.size() + 1);
 		tableDeployPlan = new JTable(tableDeployPlanModel);
+		tableDeployPlan.setRowMargin(2);
 		tableDeployPlan.setRowHeight(20);
 		for (Integer i = 0; i < tableDeployPlanModel.getColumnCount(); i++) {
 			String colName = (i == 0) ? "" : DeployOrganizations.get(i-1).Label;
@@ -282,7 +284,85 @@ public class Byzak extends JFrame {
 	}
 
 	private void buildAntTask(String directoryPath, ArrayList<TDeployLine> DeployLines, Integer orgindex) {
+		TStringList packagexml = new TStringList();
 
+/*
+	TStringList *packagexml = new TStringList();
+	packagexml->Add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+	packagexml->Add("<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">");
+
+	TStringList *classesxml = new TStringList();
+	classesxml->Duplicates = TDuplicates() << dupIgnore;
+	classesxml->Sorted = true;
+
+	TStringList *componentsxml = new TStringList();
+	componentsxml->Duplicates = TDuplicates() << dupIgnore;
+	componentsxml->Sorted = true;
+
+	TStringList *pagesxml = new TStringList();
+	pagesxml->Duplicates = TDuplicates() << dupIgnore;
+	pagesxml->Sorted = true;
+
+	TStringList *staticresourcesxml = new TStringList();
+	staticresourcesxml->Duplicates = TDuplicates() << dupIgnore;
+	staticresourcesxml->Sorted = true;
+
+	TStringList *triggersxml = new TStringList();
+	triggersxml->Duplicates = TDuplicates() << dupIgnore;
+	triggersxml->Sorted = true;
+
+	int DeployResourcesCount = 0;
+	for (int i=0; i<DeployFiles->Count; i++) {
+		TDeployFile *pDeployFile = (TDeployFile*)(DeployFiles->Items[i]);
+		TOrgFile *pOrgFile = (TOrgFile*) pDeployFile->Orgs->Items[orgindex];
+		if (pOrgFile->getIsIncludedToDeploy()) {
+			DeployResourcesCount++;
+			AnsiString res1 = pDeployFile->ResourcePath;
+			AnsiString res2 = pDeployFile->getMetaXmlPath();
+			CopyResource(res1, DeployOrgs[orgindex].Directory);
+			if (res2 != NULL) {
+				CopyResource(res2, DeployOrgs[orgindex].Directory);
+			}
+			AnsiString resname = res1.SubString(res1.Pos("\\")+1, res1.Pos(".")-res1.Pos("\\")-1);
+			if (res1.Pos("classes\\") != 0) {
+				classesxml->Add(resname);
+			}
+			if (res1.Pos("components\\") != 0) {
+				componentsxml->Add(resname);
+			}
+			if (res1.Pos("pages\\") != 0) {
+				pagesxml->Add(resname);
+			}
+			if (res1.Pos("staticresources\\") != 0) {
+				staticresourcesxml->Add(resname);
+			}
+			if (res1.Pos("triggers\\") != 0) {
+				triggersxml->Add(resname);
+			}
+		}
+	}
+
+	if (classesxml->Count > 0) {
+		AddTypes(packagexml, classesxml, "ApexClass");
+	}
+	if (componentsxml->Count > 0) {
+		AddTypes(packagexml, componentsxml, "ApexComponent");
+	}
+	if (pagesxml->Count > 0) {
+		AddTypes(packagexml, pagesxml, "ApexPage");
+	}
+	if (staticresourcesxml->Count > 0) {
+		AddTypes(packagexml, staticresourcesxml, "StaticResource");
+	}
+	if (triggersxml->Count > 0) {
+		AddTypes(packagexml, triggersxml, "ApexTrigger");
+	}
+	DeployOrgs[orgindex].DeployResourcesCount = DeployResourcesCount;
+
+	packagexml->Add("    <version>24.0</version>");
+	packagexml->Add("</Package>");
+	packagexml->SaveToFile(AntDirectory + "\\package.xml");
+*/
 	}
 
 }
