@@ -16,4 +16,14 @@ public class TDeployLine {
 		}
 	}
 
+	public String getMetaXmlPath() {
+		String metaxmlPath = null;
+		if (ResourcePath.indexOf("classes\\") != -1 || ResourcePath.indexOf("components\\") != -1 || ResourcePath.indexOf("pages\\") != -1 || ResourcePath.indexOf("staticresources\\") != -1 || ResourcePath.indexOf("triggers\\") != -1) {
+			if (ResourcePath.indexOf("-meta.xml") == -1) {
+				metaxmlPath = ResourcePath + "-meta.xml";
+			}
+		}
+		return metaxmlPath;
+	}
+
 }

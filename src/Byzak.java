@@ -15,7 +15,9 @@ import javax.swing.ListSelectionModel;
 
 import java.io.File;
 import java.io.FileInputStream;
-
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Component;
@@ -23,10 +25,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Color;
 import java.awt.FontMetrics;
-
 import java.util.Properties;
 import java.util.ArrayList;
-import java.awt.Dimension;
 
 public class Byzak extends JFrame {
 
@@ -40,6 +40,8 @@ public class Byzak extends JFrame {
 	private static String WORKSPACE_BASE_PATH;
 	private static String ANT_SPACE_BASE_PATH;
 	private static String DEPLOY_DEV_ORG_DIR;
+
+	private static String FILE_SEPARATOR;
 
 	private ArrayList<TDeployLine> DeployLines;
 	private ArrayList<TDeployOrganization> DeployOrganizations;
@@ -65,6 +67,8 @@ public class Byzak extends JFrame {
 		DeployOrganizations.add(new TDeployOrganization("P:4.356", "zRecruiting-Patch-4.356"));
 		DeployOrganizations.add(new TDeployOrganization("P:4.400", "zRecruiting-Patch-4.400"));
 		DeployOrganizations.add(new TDeployOrganization("CORE", "JS-Recruiting-CORE"));
+
+		FILE_SEPARATOR = System.getProperty("file.separator");
 
 		Properties props = new Properties();
 		try {
@@ -186,7 +190,6 @@ public class Byzak extends JFrame {
 	}
 
 	private void PrepareItClick() {
-		String fileSeparator = System.getProperty("file.separator");
 		Integer DeployOrgsCount = DeployOrganizations.size();
 		DeployLines.clear();
 		String[] Lines = textAreaInput.getText().split(System.getProperty("line.separator"));
@@ -195,19 +198,19 @@ public class Byzak extends JFrame {
 			for (Integer i = 0; i < LinesCount; i++) {
 				String fileStr = Lines[i];
 				if (fileStr != "") {
-					if (fileSeparator != "/") {
-						fileStr = fileStr.replace("/", fileSeparator);
+					if (FILE_SEPARATOR != "/") {
+						fileStr = fileStr.replace("/", FILE_SEPARATOR);
 					}
-					Integer index = fileStr.indexOf(fileSeparator+"src"+fileSeparator);
+					Integer index = fileStr.indexOf(FILE_SEPARATOR+"src"+FILE_SEPARATOR);
 					if (index > 0) {
 						TDeployLine deployLine = new TDeployLine(DeployOrgsCount);
 						deployLine.ResourcePath = fileStr.substring(index+5);
-						Integer index2 = deployLine.ResourcePath.lastIndexOf(fileSeparator);
+						Integer index2 = deployLine.ResourcePath.lastIndexOf(FILE_SEPARATOR);
 						deployLine.ResourceLabel = deployLine.ResourcePath.substring(index2+1);
 
 						for (Integer orgindex = DeployOrgsCount-1; orgindex >= 0; orgindex--) {
 							TDeployItem deployItem = deployLine.DeployItems.get(orgindex);
-							deployItem.FullFilePath = WORKSPACE_BASE_PATH + DeployOrganizations.get(orgindex).Directory + fileSeparator + "src" + fileSeparator + deployLine.ResourcePath;
+							deployItem.FullFilePath = WORKSPACE_BASE_PATH + DeployOrganizations.get(orgindex).Directory + FILE_SEPARATOR + "src" + FILE_SEPARATOR + deployLine.ResourcePath;
 							File resFile = new File(deployItem.FullFilePath);
 							deployItem.IsFileExists = resFile.exists();
 							if (deployItem.IsFileExists) {
@@ -263,6 +266,92 @@ public class Byzak extends JFrame {
 		return WidthMin;
 	}
 
+	private void buildAntTask(String directoryPath, ArrayList<TDeployLine> DeployLines, Integer orgindex) {
+		TStringList packagexml = new TStringList();
+		packagexml.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		packagexml.add("<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">");
+
+		TStringList classesxml = new TStringList();
+		classesxml.AllowDuplicates = false;
+		classesxml.Sorted = true;
+
+		TStringList componentsxml = new TStringList();
+		componentsxml.AllowDuplicates = false;
+		componentsxml.Sorted = true;
+
+		TStringList pagesxml = new TStringList();
+		pagesxml.AllowDuplicates = false;
+		pagesxml.Sorted = true;
+
+		TStringList staticresourcesxml = new TStringList();
+		staticresourcesxml.AllowDuplicates = false;
+		staticresourcesxml.Sorted = true;
+
+		TStringList triggersxml = new TStringList();
+		triggersxml.AllowDuplicates = false;
+		triggersxml.Sorted = true;
+
+		Integer DeployResourcesCount = 0;
+		for (Integer i = 0; i < DeployLines.size(); i++) {
+			TDeployLine deployLine = DeployLines.get(i);
+			TDeployItem deployItem = deployLine.DeployItems.get(orgindex);
+			if (deployItem.getIsIncludedToDeploy()) {
+				DeployResourcesCount++;
+				String res1 = deployLine.ResourcePath;
+				String res2 = deployLine.getMetaXmlPath();
+				copyResource(res1, DeployOrganizations.get(orgindex).Directory);
+				if (res2 != null) {
+					copyResource(res2, DeployOrganizations.get(orgindex).Directory);
+				}
+				String resname = res1.substring(res1.indexOf(FILE_SEPARATOR)+1, res1.indexOf("."));
+				if (res1.indexOf("classes\\") != -1) {
+					classesxml.add(resname);
+				}
+				if (res1.indexOf("components\\") != -1) {
+					componentsxml.add(resname);
+				}
+				if (res1.indexOf("pages\\") != -1) {
+					pagesxml.add(resname);
+				}
+				if (res1.indexOf("staticresources\\") != -1) {
+					staticresourcesxml.add(resname);
+				}
+				if (res1.indexOf("triggers\\") != -1) {
+					triggersxml.add(resname);
+				}
+			}
+		}
+		if (classesxml.getStrings().size() > 0) {
+			addTypes(packagexml, classesxml, "ApexClass");
+		}
+		if (componentsxml.getStrings().size() > 0) {
+			addTypes(packagexml, componentsxml, "ApexComponent");
+		}
+		if (pagesxml.getStrings().size() > 0) {
+			addTypes(packagexml, pagesxml, "ApexPage");
+		}
+		if (staticresourcesxml.getStrings().size() > 0) {
+			addTypes(packagexml, staticresourcesxml, "StaticResource");
+		}
+		if (triggersxml.getStrings().size() > 0) {
+			addTypes(packagexml, triggersxml, "ApexTrigger");
+		}
+		DeployOrganizations.get(orgindex).DeployResourcesCount = DeployResourcesCount;
+
+		packagexml.add("    <version>24.0</version>");
+		packagexml.add("</Package>");
+		packagexml.SaveToFile(ANT_SPACE_BASE_PATH + FILE_SEPARATOR + "package.xml");
+	}
+
+	private void addTypes(TStringList packagexml, TStringList types, String name) {
+		packagexml.add("    <types>");
+		for (Integer i = 0; i < types.getStrings().size(); i++) {
+			packagexml.add("        <members>" + types.getStrings().get(i) + "</members>");
+		}
+		packagexml.add("        <name>" + name + "</name>");
+		packagexml.add("    </types>");
+	}
+
 	private void deleteDirectory(String directoryPath) {
 		File dir = new File(directoryPath);
 		if (dir.isDirectory()) {
@@ -283,86 +372,21 @@ public class Byzak extends JFrame {
 		dir.mkdir();
 	}
 
-	private void buildAntTask(String directoryPath, ArrayList<TDeployLine> DeployLines, Integer orgindex) {
-		TStringList packagexml = new TStringList();
-
-/*
-	TStringList *packagexml = new TStringList();
-	packagexml->Add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-	packagexml->Add("<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">");
-
-	TStringList *classesxml = new TStringList();
-	classesxml->Duplicates = TDuplicates() << dupIgnore;
-	classesxml->Sorted = true;
-
-	TStringList *componentsxml = new TStringList();
-	componentsxml->Duplicates = TDuplicates() << dupIgnore;
-	componentsxml->Sorted = true;
-
-	TStringList *pagesxml = new TStringList();
-	pagesxml->Duplicates = TDuplicates() << dupIgnore;
-	pagesxml->Sorted = true;
-
-	TStringList *staticresourcesxml = new TStringList();
-	staticresourcesxml->Duplicates = TDuplicates() << dupIgnore;
-	staticresourcesxml->Sorted = true;
-
-	TStringList *triggersxml = new TStringList();
-	triggersxml->Duplicates = TDuplicates() << dupIgnore;
-	triggersxml->Sorted = true;
-
-	int DeployResourcesCount = 0;
-	for (int i=0; i<DeployFiles->Count; i++) {
-		TDeployFile *pDeployFile = (TDeployFile*)(DeployFiles->Items[i]);
-		TOrgFile *pOrgFile = (TOrgFile*) pDeployFile->Orgs->Items[orgindex];
-		if (pOrgFile->getIsIncludedToDeploy()) {
-			DeployResourcesCount++;
-			AnsiString res1 = pDeployFile->ResourcePath;
-			AnsiString res2 = pDeployFile->getMetaXmlPath();
-			CopyResource(res1, DeployOrgs[orgindex].Directory);
-			if (res2 != NULL) {
-				CopyResource(res2, DeployOrgs[orgindex].Directory);
-			}
-			AnsiString resname = res1.SubString(res1.Pos("\\")+1, res1.Pos(".")-res1.Pos("\\")-1);
-			if (res1.Pos("classes\\") != 0) {
-				classesxml->Add(resname);
-			}
-			if (res1.Pos("components\\") != 0) {
-				componentsxml->Add(resname);
-			}
-			if (res1.Pos("pages\\") != 0) {
-				pagesxml->Add(resname);
-			}
-			if (res1.Pos("staticresources\\") != 0) {
-				staticresourcesxml->Add(resname);
-			}
-			if (res1.Pos("triggers\\") != 0) {
-				triggersxml->Add(resname);
-			}
+	private void copyResource(String res, String orgDir) {
+		String dirname = res.substring(1, res.indexOf(FILE_SEPARATOR)-1);
+		String dirpath = ANT_SPACE_BASE_PATH + orgDir + FILE_SEPARATOR + dirname;
+		File dir = new File(dirpath);
+		if (dir.exists() == false || dir.isDirectory() == false) {
+			dir.mkdir();
 		}
-	}
-
-	if (classesxml->Count > 0) {
-		AddTypes(packagexml, classesxml, "ApexClass");
-	}
-	if (componentsxml->Count > 0) {
-		AddTypes(packagexml, componentsxml, "ApexComponent");
-	}
-	if (pagesxml->Count > 0) {
-		AddTypes(packagexml, pagesxml, "ApexPage");
-	}
-	if (staticresourcesxml->Count > 0) {
-		AddTypes(packagexml, staticresourcesxml, "StaticResource");
-	}
-	if (triggersxml->Count > 0) {
-		AddTypes(packagexml, triggersxml, "ApexTrigger");
-	}
-	DeployOrgs[orgindex].DeployResourcesCount = DeployResourcesCount;
-
-	packagexml->Add("    <version>24.0</version>");
-	packagexml->Add("</Package>");
-	packagexml->SaveToFile(AntDirectory + "\\package.xml");
-*/
+		File source = new File(WORKSPACE_BASE_PATH + DEPLOY_DEV_ORG_DIR + FILE_SEPARATOR + "src" + FILE_SEPARATOR + res);
+		File target = new File(ANT_SPACE_BASE_PATH + orgDir + FILE_SEPARATOR + res);
+		try {
+			Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
