@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.charset.Charset;
@@ -35,8 +36,8 @@ public class TStringList {
 	}
 
 	public void LoadFromFile(String filePath) {
-		File f = new File(filePath);
 		try {
+			File f = new File(filePath);
 			pStrings = new ArrayList<String>(Files.readAllLines(f.toPath(), Charset.forName("UTF-8")));
 		}
 		catch (IOException e) {
@@ -45,7 +46,17 @@ public class TStringList {
 	}
 
 	public void SaveToFile(String filePath) {
-
+		try {
+			String newLine = System.getProperty("line.separator");
+			FileWriter f0 = new FileWriter(filePath);
+			for (Integer i = 0; i < pStrings.size(); i++) {
+				f0.append(pStrings.get(i) + newLine);
+			}
+			f0.close();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

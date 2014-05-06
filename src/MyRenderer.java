@@ -25,7 +25,7 @@ public class MyRenderer extends JLabel implements TableCellRenderer {
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 		// Draw data row
-		if (row >= 0) {
+		if (row >= 0 && row < DeployLines.size()) {
 			TDeployLine deployLine = DeployLines.get(row);
 			// Draw title column
 			if (column == 0) {
@@ -55,18 +55,6 @@ public class MyRenderer extends JLabel implements TableCellRenderer {
 					setBackground(Color.WHITE);
 				}
 /*
-				if (pOrgFile->IsFileExists) {
-					if (pOrgFile->getIsIncludedToDeploy()) {
-						OrgsGrid->Canvas->Brush->Color = clGreen;
-					}
-					else {
-						OrgsGrid->Canvas->Brush->Color = clRed;
-					}
-				}
-				else {
-					OrgsGrid->Canvas->Brush->Color = clWhite;
-				}
-				OrgsGrid->Canvas->FillRect(Rect);
 				if (pOrgFile->ForceAction) {
 					OrgsGrid->Canvas->Font->Color = (pOrgFile->IsFileExists) ? clWhite : clBlack;
 					OrgsGrid->Canvas->Font->Name = "Arial";
@@ -77,6 +65,25 @@ public class MyRenderer extends JLabel implements TableCellRenderer {
 					OrgsGrid->Canvas->TextOut(Rect.Left+dx, Rect.Top+2, CellText);
 				}
 */
+			}
+		}
+		// Draw deploy buttons row
+		if (row == DeployLines.size()) {
+			if (column == 0) {
+				setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+				setForeground(UIManager.getColor("TableHeader.foreground"));
+				setBackground(UIManager.getColor("TableHeader.background"));
+				setText("");
+			}
+			if (column > 0) {
+				Integer DeployResourcesCount = 1; //DeployOrganizations.get(column-1).;
+				setFont(new Font("Arial", Font.BOLD, 12));
+				setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+				setForeground(UIManager.getColor("TableHeader.foreground"));
+				setBackground(UIManager.getColor("TableHeader.background"));
+				setText("D >");
+				setHorizontalAlignment(CENTER);
+				setEnabled(DeployResourcesCount > 0);
 			}
 		}
 		return this;

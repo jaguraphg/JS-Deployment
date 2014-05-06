@@ -25,6 +25,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Color;
 import java.awt.FontMetrics;
+import java.util.List;
 import java.util.Properties;
 import java.util.ArrayList;
 
@@ -33,7 +34,7 @@ public class Byzak extends JFrame {
 	private JPanel contentPane;
 	private JTextArea textAreaInput;
 	private JTable tableDeployPlan;
-	private JButton btnBuldPlan;
+	private JButton btnBuildPlan;
 	private JButton btnDeployAll;
 	private DefaultTableModel tableDeployPlanModel;
 
@@ -80,11 +81,12 @@ public class Byzak extends JFrame {
 				""
 			);
 			props.load(new FileInputStream(new File("config.ini")));
-			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH");
-			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH");
-			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR");
+			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim();
+			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim();
+			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR").trim();
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		setTitle("Bysh");
@@ -134,9 +136,9 @@ public class Byzak extends JFrame {
 			}
 		});
 
-		btnBuldPlan = new JButton("Buld Plan for ANT");
-		btnBuldPlan.setEnabled(false);
-		btnBuldPlan.addActionListener(new ActionListener() {
+		btnBuildPlan = new JButton("Buld Plan for ANT");
+		btnBuildPlan.setEnabled(false);
+		btnBuildPlan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				BuildPlanClick();
 			}
@@ -158,7 +160,7 @@ public class Byzak extends JFrame {
 		gl_contentPane.setHorizontalGroup(
 			gl_contentPane.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_contentPane.createSequentialGroup()
-					.addComponent(btnBuldPlan, GroupLayout.PREFERRED_SIZE, 146, GroupLayout.PREFERRED_SIZE)
+					.addComponent(btnBuildPlan, GroupLayout.PREFERRED_SIZE, 146, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(btnDeployAll, GroupLayout.PREFERRED_SIZE, 91, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED, 450, Short.MAX_VALUE)
@@ -179,7 +181,7 @@ public class Byzak extends JFrame {
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING, false)
 						.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
-							.addComponent(btnBuldPlan)
+							.addComponent(btnBuildPlan)
 							.addComponent(btnDeployAll))
 						.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 							.addComponent(btnBye)
@@ -232,21 +234,21 @@ public class Byzak extends JFrame {
 				}
 			}
 		}
-		tableDeployPlanModel.setRowCount(DeployLines.size());
+		tableDeployPlanModel.setRowCount(DeployLines.size() + 1);
 		tableDeployPlan.getColumnModel().getColumn(0).setPreferredWidth(getMinGridWidth() + 6);
-		btnBuldPlan.setEnabled(DeployLines.size() > 0);
+		btnBuildPlan.setEnabled(DeployLines.size() > 0);
 	}
 
 	private void BuildPlanClick() {
 		if (DeployLines.size() > 0) {
-			btnBuldPlan.setEnabled(false);
+			btnBuildPlan.setEnabled(false);
 			for (int orgindex = DeployOrganizations.size() - 1; orgindex >= 0; orgindex--) {
 				String AntDirectory = ANT_SPACE_BASE_PATH + DeployOrganizations.get(orgindex).Directory;
 				deleteDirectory(AntDirectory);
 				createDirectory(AntDirectory);
 				buildAntTask(AntDirectory, DeployLines, orgindex);
 			}
-			btnBuldPlan.setEnabled(true);
+			btnDeployAll.setEnabled(true);
 		}
 	}
 
@@ -266,7 +268,7 @@ public class Byzak extends JFrame {
 		return WidthMin;
 	}
 
-	private void buildAntTask(String directoryPath, ArrayList<TDeployLine> DeployLines, Integer orgindex) {
+	private void buildAntTask(String AntDirectory, ArrayList<TDeployLine> DeployLines, Integer orgindex) {
 		TStringList packagexml = new TStringList();
 		packagexml.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		packagexml.add("<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">");
@@ -296,7 +298,6 @@ public class Byzak extends JFrame {
 			TDeployLine deployLine = DeployLines.get(i);
 			TDeployItem deployItem = deployLine.DeployItems.get(orgindex);
 			if (deployItem.getIsIncludedToDeploy()) {
-				DeployResourcesCount++;
 				String res1 = deployLine.ResourcePath;
 				String res2 = deployLine.getMetaXmlPath();
 				copyResource(res1, DeployOrganizations.get(orgindex).Directory);
@@ -319,37 +320,32 @@ public class Byzak extends JFrame {
 				if (res1.indexOf("triggers\\") != -1) {
 					triggersxml.add(resname);
 				}
+				DeployResourcesCount++;
 			}
 		}
-		if (classesxml.getStrings().size() > 0) {
-			addTypes(packagexml, classesxml, "ApexClass");
-		}
-		if (componentsxml.getStrings().size() > 0) {
-			addTypes(packagexml, componentsxml, "ApexComponent");
-		}
-		if (pagesxml.getStrings().size() > 0) {
-			addTypes(packagexml, pagesxml, "ApexPage");
-		}
-		if (staticresourcesxml.getStrings().size() > 0) {
-			addTypes(packagexml, staticresourcesxml, "StaticResource");
-		}
-		if (triggersxml.getStrings().size() > 0) {
-			addTypes(packagexml, triggersxml, "ApexTrigger");
-		}
+		addTypes(packagexml, classesxml, "ApexClass");
+		addTypes(packagexml, componentsxml, "ApexComponent");
+		addTypes(packagexml, pagesxml, "ApexPage");
+		addTypes(packagexml, staticresourcesxml, "StaticResource");
+		addTypes(packagexml, triggersxml, "ApexTrigger");
+
 		DeployOrganizations.get(orgindex).DeployResourcesCount = DeployResourcesCount;
 
 		packagexml.add("    <version>24.0</version>");
 		packagexml.add("</Package>");
-		packagexml.SaveToFile(ANT_SPACE_BASE_PATH + FILE_SEPARATOR + "package.xml");
+		packagexml.SaveToFile(AntDirectory + FILE_SEPARATOR + "package.xml");
 	}
 
 	private void addTypes(TStringList packagexml, TStringList types, String name) {
-		packagexml.add("    <types>");
-		for (Integer i = 0; i < types.getStrings().size(); i++) {
-			packagexml.add("        <members>" + types.getStrings().get(i) + "</members>");
+		List<String> members = types.getStrings();
+		if (members.size() > 0) {
+			packagexml.add("    <types>");
+			for (Integer i = 0; i < members.size(); i++) {
+				packagexml.add("        <members>" + members.get(i) + "</members>");
+			}
+			packagexml.add("        <name>" + name + "</name>");
+			packagexml.add("    </types>");
 		}
-		packagexml.add("        <name>" + name + "</name>");
-		packagexml.add("    </types>");
 	}
 
 	private void deleteDirectory(String directoryPath) {
@@ -373,7 +369,7 @@ public class Byzak extends JFrame {
 	}
 
 	private void copyResource(String res, String orgDir) {
-		String dirname = res.substring(1, res.indexOf(FILE_SEPARATOR)-1);
+		String dirname = res.substring(0, res.indexOf(FILE_SEPARATOR));
 		String dirpath = ANT_SPACE_BASE_PATH + orgDir + FILE_SEPARATOR + dirname;
 		File dir = new File(dirpath);
 		if (dir.exists() == false || dir.isDirectory() == false) {
