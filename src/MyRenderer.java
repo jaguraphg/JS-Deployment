@@ -13,19 +13,23 @@ import java.util.ArrayList;
 public class MyRenderer extends JLabel implements TableCellRenderer {
 
 	private ArrayList<TDeployLine> DeployLines;
+	private ArrayList<TDeployOrganization> DeployOrganizations;
 
 	public MyRenderer() {
 		setOpaque(true);
 	}
-	public MyRenderer(ArrayList<TDeployLine> dl) {
+	public MyRenderer(ArrayList<TDeployLine> dl, ArrayList<TDeployOrganization> d2) {
 		this();
 		DeployLines = dl;
+		DeployOrganizations = d2;
 	}
 
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 		// Draw data row
 		if (row >= 0 && row < DeployLines.size()) {
+			setHorizontalAlignment(LEFT);
+			setEnabled(true);
 			TDeployLine deployLine = DeployLines.get(row);
 			// Draw title column
 			if (column == 0) {
@@ -76,7 +80,7 @@ public class MyRenderer extends JLabel implements TableCellRenderer {
 				setText("");
 			}
 			if (column > 0) {
-				Integer DeployResourcesCount = 1; //DeployOrganizations.get(column-1).;
+				Integer DeployResourcesCount = DeployOrganizations.get(column-1).DeployResourcesCount;
 				setFont(new Font("Arial", Font.BOLD, 12));
 				setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 				setForeground(UIManager.getColor("TableHeader.foreground"));

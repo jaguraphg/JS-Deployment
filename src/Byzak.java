@@ -28,6 +28,8 @@ import java.awt.FontMetrics;
 import java.util.List;
 import java.util.Properties;
 import java.util.ArrayList;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class Byzak extends JFrame {
 
@@ -111,8 +113,14 @@ public class Byzak extends JFrame {
 		tableDeployPlan.setRowSelectionAllowed(false);
 		tableDeployPlan.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		tableDeployPlan.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		tableDeployPlan.setDefaultRenderer(Object.class, new MyRenderer(DeployLines));
+		tableDeployPlan.setDefaultRenderer(Object.class, new MyRenderer(DeployLines, DeployOrganizations));
 		tableDeployPlan.getColumnModel().getColumn(0).setPreferredWidth(180);
+		tableDeployPlan.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+//				textAreaInput.setText(tableDeployPlan.viewToModel(e.getPoint());
+			}
+		});
 
 		JScrollPane scrollPane1 = new JScrollPane();
 		scrollPane1.setBackground(new Color(105, 105, 105));
@@ -194,7 +202,7 @@ public class Byzak extends JFrame {
 	private void PrepareItClick() {
 		Integer DeployOrgsCount = DeployOrganizations.size();
 		DeployLines.clear();
-		String[] Lines = textAreaInput.getText().split(System.getProperty("line.separator"));
+		String[] Lines = textAreaInput.getText().split("\\r?\\n");
 		Integer LinesCount = Lines.length;
 		if (LinesCount > 0) {
 			for (Integer i = 0; i < LinesCount; i++) {
@@ -249,6 +257,7 @@ public class Byzak extends JFrame {
 				buildAntTask(AntDirectory, DeployLines, orgindex);
 			}
 			btnDeployAll.setEnabled(true);
+			tableDeployPlan.repaint();
 		}
 	}
 
