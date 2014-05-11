@@ -100,7 +100,11 @@ public class Byzak extends JFrame {
 		setContentPane(contentPane);
 
 		tableDeployPlanModel = new DefaultTableModel(0, DeployOrganizations.size() + 1);
-		tableDeployPlan = new JTable(tableDeployPlanModel);
+		tableDeployPlan = new JTable(tableDeployPlanModel) {
+			public boolean isCellEditable(int rowIndex, int colIndex) {
+				return false;
+			}
+		};
 		tableDeployPlan.setRowMargin(2);
 		tableDeployPlan.setRowHeight(20);
 		for (Integer i = 0; i < tableDeployPlanModel.getColumnCount(); i++) {
@@ -118,7 +122,7 @@ public class Byzak extends JFrame {
 		tableDeployPlan.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-//				textAreaInput.setText(tableDeployPlan.viewToModel(e.getPoint());
+				TableDeployClick(e);
 			}
 		});
 
@@ -258,6 +262,23 @@ public class Byzak extends JFrame {
 			}
 			btnDeployAll.setEnabled(true);
 			tableDeployPlan.repaint();
+		}
+	}
+
+	private void TableDeployClick(MouseEvent e) {
+		JTable target = (JTable) e.getSource();
+		int row = target.getSelectedRow();
+		int column = target.getSelectedColumn();
+		// Double click on Deploy button
+		if (e.getClickCount() == 2 && target.getRowCount() >= 2 && row == target.getRowCount()-1 && column > 0) {
+			int DeployResourcesCount = DeployOrganizations.get(column-1).DeployResourcesCount;
+			if (DeployResourcesCount > 0) {
+				textAreaInput.setText(String.valueOf(DeployResourcesCount));
+			}
+		}
+		// Single click on deploy resource
+		if (e.getClickCount() == 1 && e.getButton() == 1 && row > 0 && row <= target.getRowCount()-1 && column > 0) {
+			textAreaInput.setText("byka");
 		}
 	}
 
