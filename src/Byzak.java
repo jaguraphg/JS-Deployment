@@ -43,6 +43,7 @@ public class Byzak extends JFrame {
 	private static String WORKSPACE_BASE_PATH;
 	private static String ANT_SPACE_BASE_PATH;
 	private static String DEPLOY_DEV_ORG_DIR;
+	private static String DEPLOY_SCRIPT_NAME;
 
 	private static String FILE_SEPARATOR;
 
@@ -83,9 +84,10 @@ public class Byzak extends JFrame {
 				""
 			);
 			props.load(new FileInputStream(new File("config.ini")));
-			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim();
-			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim();
+			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
+			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR").trim();
+			DEPLOY_SCRIPT_NAME = props.getProperty(osPrefix + "DEPLOY_SCRIPT_NAME").trim();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -105,6 +107,7 @@ public class Byzak extends JFrame {
 				return false;
 			}
 		};
+		tableDeployPlan.setFont(new Font("Dialog", Font.PLAIN, 12));
 		tableDeployPlan.setRowMargin(2);
 		tableDeployPlan.setRowHeight(20);
 		for (Integer i = 0; i < tableDeployPlanModel.getColumnCount(); i++) {
@@ -132,9 +135,9 @@ public class Byzak extends JFrame {
 		scrollPane1.setViewportView(tableDeployPlan);
 
 		textAreaInput = new JTextArea();
+		textAreaInput.setFont(new Font("Dialog", Font.PLAIN, 12));
 		textAreaInput.setBorder(new EmptyBorder(2, 2, 2, 2));
 		textAreaInput.setTabSize(4);
-		textAreaInput.setFont(new Font("Courier New", Font.PLAIN, 12));
 		textAreaInput.setText("U /Dev-Base/src/classes/candidateBulkAction.cls\r\nU /Dev-Base/src/classes/candidateBulkAction.cls-meta.xml\r\nU /Dev-Base/src/classes/s_CTagController.cls\r\nU /Dev-Base/src/classes/s_CTagController.cls-meta.xml\r\nU /Dev-Base/src/components/s_Result.component\r\n\r\nU /Dev-Base/src/labels/CustomLabels.labels\r\nU /Dev-Base/src/objects/Contact.object\r\n\r\nU /Dev-Base/src/pages/AddTagsCandidate.page\r\nU /Dev-Base/src/pages/AddTagsCandidate.page-meta.xml\r\nU /Dev-Base/src/pages/StoryBoardReplica.page\r\nU /Dev-Base/src/pages/s_CTag.page-meta.xml\r\nU /Dev-Base/src/staticresources/SSearch.resource\r\n");
 
 		JScrollPane scrollPane2 = new JScrollPane();
@@ -265,19 +268,28 @@ public class Byzak extends JFrame {
 		}
 	}
 
-	private void TableDeployClick(MouseEvent e) {
-		JTable target = (JTable) e.getSource();
+	private void TableDeployClick(MouseEvent event) {
+		JTable target = (JTable) event.getSource();
 		int row = target.getSelectedRow();
 		int column = target.getSelectedColumn();
 		// Double click on Deploy button
-		if (e.getClickCount() == 2 && target.getRowCount() >= 2 && row == target.getRowCount()-1 && column > 0) {
+		if (event.getClickCount() == 2 && target.getRowCount() >= 2 && row == target.getRowCount()-1 && column > 0) {
 			int DeployResourcesCount = DeployOrganizations.get(column-1).DeployResourcesCount;
 			if (DeployResourcesCount > 0) {
-				textAreaInput.setText(String.valueOf(DeployResourcesCount));
+				String AntTask = "deploy-" + DeployOrganizations.get(column-1).Directory;
+				String command = "start " + ANT_SPACE_BASE_PATH + DEPLOY_SCRIPT_NAME + " " + AntTask;
+				try {
+					Runtime.getRuntime().exec(command);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+//				AnsiString command = "/k " + AnsiString(AntBasePath) + "deploy-ORG.bat deploy-" + DeployOrgs[orgindex].Directory;
+//				ShellExecute(Handle, "open", "cmd", command.c_str(), NULL, SW_SHOW);
 			}
 		}
 		// Single click on deploy resource
-		if (e.getClickCount() == 1 && e.getButton() == 1 && row > 0 && row <= target.getRowCount()-1 && column > 0) {
+		if (event.getClickCount() == 1 && event.getButton() == 1 && row > 0 && row <= target.getRowCount()-1 && column > 0) {
 			textAreaInput.setText("byka");
 		}
 	}
