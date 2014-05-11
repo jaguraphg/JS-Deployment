@@ -83,8 +83,8 @@ public class Byzak extends JFrame {
 				""
 			);
 			props.load(new FileInputStream(new File("config.ini")));
-			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim();
-			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim();
+			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
+			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR").trim();
 		}
 		catch (Exception e) {
@@ -100,7 +100,11 @@ public class Byzak extends JFrame {
 		setContentPane(contentPane);
 
 		tableDeployPlanModel = new DefaultTableModel(0, DeployOrganizations.size() + 1);
-		tableDeployPlan = new JTable(tableDeployPlanModel);
+		tableDeployPlan = new JTable(tableDeployPlanModel) {
+			public boolean isCellEditable(int rowIndex, int colIndex) {
+				return false;
+			}
+		};
 		tableDeployPlan.setRowMargin(2);
 		tableDeployPlan.setRowHeight(20);
 		for (Integer i = 0; i < tableDeployPlanModel.getColumnCount(); i++) {
@@ -118,7 +122,7 @@ public class Byzak extends JFrame {
 		tableDeployPlan.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-//				textAreaInput.setText(tableDeployPlan.viewToModel(e.getPoint());
+				TableDeployClick(e);
 			}
 		});
 
@@ -130,12 +134,12 @@ public class Byzak extends JFrame {
 		textAreaInput = new JTextArea();
 		textAreaInput.setBorder(new EmptyBorder(2, 2, 2, 2));
 		textAreaInput.setTabSize(4);
-		textAreaInput.setFont(new Font("Courier New", Font.PLAIN, 12));
+		textAreaInput.setFont(new Font("Courier", Font.PLAIN, 12));
 		textAreaInput.setText("U /Dev-Base/src/classes/candidateBulkAction.cls\r\nU /Dev-Base/src/classes/candidateBulkAction.cls-meta.xml\r\nU /Dev-Base/src/classes/s_CTagController.cls\r\nU /Dev-Base/src/classes/s_CTagController.cls-meta.xml\r\nU /Dev-Base/src/components/s_Result.component\r\n\r\nU /Dev-Base/src/labels/CustomLabels.labels\r\nU /Dev-Base/src/objects/Contact.object\r\n\r\nU /Dev-Base/src/pages/AddTagsCandidate.page\r\nU /Dev-Base/src/pages/AddTagsCandidate.page-meta.xml\r\nU /Dev-Base/src/pages/StoryBoardReplica.page\r\nU /Dev-Base/src/pages/s_CTag.page-meta.xml\r\nU /Dev-Base/src/staticresources/SSearch.resource\r\n");
 
 		JScrollPane scrollPane2 = new JScrollPane();
 		scrollPane2.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		scrollPane2.setViewportView(textAreaInput);
+		scrollPane2.setRowHeaderView(textAreaInput);
 
 		JButton btnPrepare = new JButton("Prepare It");
 		btnPrepare.addActionListener(new ActionListener() {
@@ -258,6 +262,23 @@ public class Byzak extends JFrame {
 			}
 			btnDeployAll.setEnabled(true);
 			tableDeployPlan.repaint();
+		}
+	}
+
+	private void TableDeployClick(MouseEvent e) {
+		JTable target = (JTable) e.getSource();
+		int row = target.getSelectedRow();
+		int column = target.getSelectedColumn();
+		// Double click on Deploy button
+		if (e.getClickCount() == 2 && target.getRowCount() >= 2 && row == target.getRowCount()-1 && column > 0) {
+			int DeployResourcesCount = DeployOrganizations.get(column-1).DeployResourcesCount;
+			if (DeployResourcesCount > 0) {
+				textAreaInput.setText(String.valueOf(DeployResourcesCount));
+			}
+		}
+		// Single click on deploy resource
+		if (e.getClickCount() == 1 && e.getButton() == 1 && row > 0 && row <= target.getRowCount()-1 && column > 0) {
+			textAreaInput.setText("byka");
 		}
 	}
 
