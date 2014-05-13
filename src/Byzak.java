@@ -43,7 +43,7 @@ public class Byzak extends JFrame {
 	private static String WORKSPACE_BASE_PATH;
 	private static String ANT_SPACE_BASE_PATH;
 	private static String DEPLOY_DEV_ORG_DIR;
-	private static String DEPLOY_SCRIPT_NAME;
+	private static String DEPLOY_COMMAND;
 
 	private static String FILE_SEPARATOR;
 
@@ -66,6 +66,17 @@ public class Byzak extends JFrame {
 
 	// Constructor
 	public Byzak() {
+/*
+		String[] commands = {"cmd", "/C", "start", "d:\\Dropbox\\Force.com\\ant\\JS-Recruiting\\dipa-ORG.bat", "deploy-JS-Recruiting-CORE"};
+		try {
+			ProcessBuilder builder = new ProcessBuilder(commands);
+			builder.start();
+//			Runtime.getRuntime().exec(command);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+*/
 		DeployLines = new ArrayList<TDeployLine>();
 		DeployOrganizations = new ArrayList<TDeployOrganization>();
 		DeployOrganizations.add(new TDeployOrganization("P:4.356", "zRecruiting-Patch-4.356"));
@@ -87,7 +98,7 @@ public class Byzak extends JFrame {
 			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR").trim();
-			DEPLOY_SCRIPT_NAME = props.getProperty(osPrefix + "DEPLOY_SCRIPT_NAME").trim();
+			DEPLOY_COMMAND = props.getProperty(osPrefix + "DEPLOY_COMMAND").trim();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -277,9 +288,13 @@ public class Byzak extends JFrame {
 			int DeployResourcesCount = DeployOrganizations.get(column-1).DeployResourcesCount;
 			if (DeployResourcesCount > 0) {
 				String AntTask = "deploy-" + DeployOrganizations.get(column-1).Directory;
-				String command = "start " + ANT_SPACE_BASE_PATH + DEPLOY_SCRIPT_NAME + " " + AntTask;
+				String command = DEPLOY_COMMAND.replace("{ANT_SPACE_BASE_PATH}", ANT_SPACE_BASE_PATH).replace("{0}", AntTask);
+//				String[] commands = {"cmd", "/C", "start", ANT_SPACE_BASE_PATH + DEPLOY_COMMAND, AntTask};
+				String[] commands = command.split("\\s");
 				try {
-					Runtime.getRuntime().exec(command);
+					ProcessBuilder builder = new ProcessBuilder(commands);
+					builder.start();
+//					Runtime.getRuntime().exec(command);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
