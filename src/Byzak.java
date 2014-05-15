@@ -67,11 +67,11 @@ public class Byzak extends JFrame {
 	// Constructor
 	public Byzak() {
 /*
-		String[] commands = {"cmd", "/C", "start", "d:\\Dropbox\\Force.com\\ant\\JS-Recruiting\\dipa-ORG.bat", "deploy-JS-Recruiting-CORE"};
+		String[] commands = {"open", "-a", "Terminal.app", "/Users/pavellobach/Dropbox/Force.com/ant/JS-Recruiting/dipa-ORG", "deploy-JS-Recruiting-CORE"};
 		try {
 			ProcessBuilder builder = new ProcessBuilder(commands);
-			builder.start();
-//			Runtime.getRuntime().exec(command);
+//			builder.start();
+			Runtime.getRuntime().exec("open -a Terminal.app /Users/pavellobach/Dropbox/Force.com/ant/JS-Recruiting/dipa-ORG --args deploy-JS-Recruiting-CORE");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -290,11 +290,11 @@ public class Byzak extends JFrame {
 				String AntTask = "deploy-" + DeployOrganizations.get(column-1).Directory;
 				String command = DEPLOY_COMMAND.replace("{ANT_SPACE_BASE_PATH}", ANT_SPACE_BASE_PATH).replace("{0}", AntTask);
 //				String[] commands = {"cmd", "/C", "start", ANT_SPACE_BASE_PATH + DEPLOY_COMMAND, AntTask};
-				String[] commands = command.split("\\s");
+//				String[] commands = command.split("\\s");
 				try {
-					ProcessBuilder builder = new ProcessBuilder(commands);
-					builder.start();
-//					Runtime.getRuntime().exec(command);
+//					ProcessBuilder builder = new ProcessBuilder(commands);
+//					builder.start();
+					Runtime.getRuntime().exec(command);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -305,7 +305,7 @@ public class Byzak extends JFrame {
 		}
 		// Single click on deploy resource
 		if (event.getClickCount() == 1 && event.getButton() == 1 && row > 0 && row <= target.getRowCount()-1 && column > 0) {
-			textAreaInput.setText("byka");
+//			textAreaInput.setText("byka");
 		}
 	}
 
@@ -362,19 +362,19 @@ public class Byzak extends JFrame {
 					copyResource(res2, DeployOrganizations.get(orgindex).Directory);
 				}
 				String resname = res1.substring(res1.indexOf(FILE_SEPARATOR)+1, res1.indexOf("."));
-				if (res1.indexOf("classes\\") != -1) {
+				if (res1.indexOf("classes"+FILE_SEPARATOR) != -1) {
 					classesxml.add(resname);
 				}
-				if (res1.indexOf("components\\") != -1) {
+				if (res1.indexOf("components"+FILE_SEPARATOR) != -1) {
 					componentsxml.add(resname);
 				}
-				if (res1.indexOf("pages\\") != -1) {
+				if (res1.indexOf("pages"+FILE_SEPARATOR) != -1) {
 					pagesxml.add(resname);
 				}
-				if (res1.indexOf("staticresources\\") != -1) {
+				if (res1.indexOf("staticresources"+FILE_SEPARATOR) != -1) {
 					staticresourcesxml.add(resname);
 				}
-				if (res1.indexOf("triggers\\") != -1) {
+				if (res1.indexOf("triggers"+FILE_SEPARATOR) != -1) {
 					triggersxml.add(resname);
 				}
 				DeployResourcesCount++;
