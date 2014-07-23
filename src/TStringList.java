@@ -35,8 +35,31 @@ public class TStringList {
 		return pStrings.add(s);
 	}
 
+	public Boolean compareTo(TStringList s) {
+		if (s == null) {
+			return false;
+		}
+		ArrayList<String> lines1 = getStrings();
+		ArrayList<String> lines2 = s.getStrings();
+		if (lines1.size() != lines2.size()) {
+			return false;
+		}
+		Integer diffs = 0;
+		for (Integer i = 0; i < lines1.size(); i++) {
+			if (lines1.get(i).equals(lines2.get(i)) == false) {
+				diffs++;
+				do {
+					i++;
+				}
+				while (i < lines1.size() && lines1.get(i).equals(lines2.get(i)) == false);
+			}
+		}
+		return (diffs == 0);
+	}
+
 	public void LoadFromFile(String filePath) {
 		try {
+//			System.out.println(filePath);
 			File f = new File(filePath);
 			pStrings = new ArrayList<String>(Files.readAllLines(f.toPath(), Charset.forName("UTF-8")));
 		}

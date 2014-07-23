@@ -42,11 +42,8 @@ public class MyRenderer extends JLabel implements TableCellRenderer {
 			// Draw data column
 			if (column > 0) {
 				TDeployItem deployItem = deployLine.DeployItems.get(column-1);
-				setFont(new Font("Arial", Font.PLAIN, 12));
 				setBorder(hasFocus ? BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(UIManager.getColor("Table.selectionBackground"), 1), BorderFactory.createEmptyBorder(1, 1, 1, 1)) : BorderFactory.createEmptyBorder(2, 2, 2, 2));
 				setForeground(isSelected ? UIManager.getColor("Table.selectionForeground") : UIManager.getColor("Table.foreground"));
-//				setBackground(isSelected ? UIManager.getColor("Table.selectionBackground") : UIManager.getColor("Table.background"));
-				setText("");
 				if (deployItem.IsFileExists) {
 					if (deployItem.getIsIncludedToDeploy()) {
 						setBackground(new Color(0x008000));
@@ -58,17 +55,15 @@ public class MyRenderer extends JLabel implements TableCellRenderer {
 				else {
 					setBackground(Color.WHITE);
 				}
-/*
-				if (pOrgFile->ForceAction) {
-					OrgsGrid->Canvas->Font->Color = (pOrgFile->IsFileExists) ? clWhite : clBlack;
-					OrgsGrid->Canvas->Font->Name = "Arial";
-					OrgsGrid->Canvas->Font->Size = 12;
-					OrgsGrid->Canvas->Font->Style = TFontStyles() << fsBold;
-					AnsiString CellText = "F";
-					int dx = (OrgsGrid->ColWidths[(int)ACol] - OrgsGrid->Canvas->TextWidth(CellText)) / 2;
-					OrgsGrid->Canvas->TextOut(Rect.Left+dx, Rect.Top+2, CellText);
+				if (deployItem.ForceAction) {
+					setForeground(deployItem.IsFileExists ? Color.WHITE : Color.BLACK);
+					setFont(new Font("Arial", Font.BOLD, 12));
+					setText("F");
+					setHorizontalAlignment(CENTER);
 				}
-*/
+				else {
+					setText("");
+				}
 			}
 		}
 		// Draw deploy buttons row

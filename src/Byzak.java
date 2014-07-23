@@ -12,12 +12,13 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.JPopupMenu;
+import javax.swing.JMenuItem;
 
+import java.beans.Beans;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Component;
@@ -25,11 +26,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Color;
 import java.awt.FontMetrics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Properties;
 import java.util.ArrayList;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class Byzak extends JFrame {
 
@@ -39,6 +42,7 @@ public class Byzak extends JFrame {
 	private JButton btnBuildPlan;
 	private JButton btnDeployAll;
 	private DefaultTableModel tableDeployPlanModel;
+	private JPopupMenu popupMenu;
 
 	private static String WORKSPACE_BASE_PATH;
 	private static String ANT_SPACE_BASE_PATH;
@@ -49,6 +53,8 @@ public class Byzak extends JFrame {
 
 	private ArrayList<TDeployLine> DeployLines;
 	private ArrayList<TDeployOrganization> DeployOrganizations;
+
+	private Integer PopupMenuFileIndex, PopupMenuOrgIndex;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -67,11 +73,11 @@ public class Byzak extends JFrame {
 	// Constructor
 	public Byzak() {
 /*
-		String[] commands = {"open", "-a", "Terminal.app", "/Users/pavellobach/Dropbox/Force.com/ant/JS-Recruiting/dipa-ORG", "deploy-JS-Recruiting-CORE"};
+		String[] commands = {"cmd", "/C", "start", "d:\\Dropbox\\Force.com\\ant\\JS-Recruiting\\dipa-ORG.bat", "deploy-JS-Recruiting-CORE"};
 		try {
 			ProcessBuilder builder = new ProcessBuilder(commands);
-//			builder.start();
-			Runtime.getRuntime().exec("open -a Terminal.app /Users/pavellobach/Dropbox/Force.com/ant/JS-Recruiting/dipa-ORG --args deploy-JS-Recruiting-CORE");
+			builder.start();
+//			Runtime.getRuntime().exec(command);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -86,7 +92,9 @@ public class Byzak extends JFrame {
 		FILE_SEPARATOR = System.getProperty("file.separator");
 
 		Properties props = new Properties();
+		File propsFile = new File("config.ini");
 		try {
+			props.load(new FileInputStream(propsFile));
 			String os = System.getProperty("os.name").toLowerCase();
 			String osPrefix = (
 				(os.indexOf( "win" ) >= 0) ? "WIN_" :
@@ -94,7 +102,6 @@ public class Byzak extends JFrame {
 				(os.indexOf( "nix" ) >= 0) ? "NIX_" :
 				""
 			);
-			props.load(new FileInputStream(new File("config.ini")));
 			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR").trim();
@@ -103,6 +110,12 @@ public class Byzak extends JFrame {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
+		Boolean isApplicationConfigured = Beans.isDesignTime() || (
+			WORKSPACE_BASE_PATH != null &&
+			ANT_SPACE_BASE_PATH != null &&
+			DEPLOY_DEV_ORG_DIR != null &&
+			DEPLOY_COMMAND != null
+		);
 
 		setTitle("Bysh");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -111,6 +124,12 @@ public class Byzak extends JFrame {
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
+
+		if (isApplicationConfigured == false) {
+			JLabel lblApplicationNotConfigured = new JLabel("Application is not configured!");
+			contentPane.add(lblApplicationNotConfigured);
+			return;
+		}
 
 		tableDeployPlanModel = new DefaultTableModel(0, DeployOrganizations.size() + 1);
 		tableDeployPlan = new JTable(tableDeployPlanModel) {
@@ -144,6 +163,26 @@ public class Byzak extends JFrame {
 		scrollPane1.setBackground(new Color(105, 105, 105));
 		scrollPane1.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		scrollPane1.setViewportView(tableDeployPlan);
+
+		popupMenu = new JPopupMenu();
+		JMenuItem mntmIncludeExclude = new JMenuItem("Include Exclude");
+		mntmIncludeExclude.setName("IncludeExclude");
+		mntmIncludeExclude.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				TablePopupMenuClick(e);
+			}
+		});
+		popupMenu.add(mntmIncludeExclude);
+		JMenuItem mntmCompareWithCore = new JMenuItem("Compare With CORE");
+		mntmCompareWithCore.setName("CompareWithCore");
+		mntmCompareWithCore.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				TablePopupMenuClick(e);
+			}
+		});
+		popupMenu.add(mntmCompareWithCore);
 
 		textAreaInput = new JTextArea();
 		textAreaInput.setFont(new Font("Dialog", Font.PLAIN, 12));
@@ -213,13 +252,13 @@ public class Byzak extends JFrame {
 							.addComponent(btnBye)
 							.addComponent(btnPrepare))))
 		);
-
 		contentPane.setLayout(gl_contentPane);
 	}
 
 	private void PrepareItClick() {
 		Integer DeployOrgsCount = DeployOrganizations.size();
 		DeployLines.clear();
+		ArrayList<String> DupeControl = new ArrayList<String>();
 		String[] Lines = textAreaInput.getText().split("\\r?\\n");
 		Integer LinesCount = Lines.length;
 		if (LinesCount > 0) {
@@ -229,8 +268,16 @@ public class Byzak extends JFrame {
 					if (FILE_SEPARATOR != "/") {
 						fileStr = fileStr.replace("/", FILE_SEPARATOR);
 					}
+					Integer indexMETA = fileStr.indexOf("-meta.xml");
+					if (indexMETA > 0) {
+						fileStr = fileStr.substring(0, indexMETA);
+					}
 					Integer index = fileStr.indexOf(FILE_SEPARATOR+"src"+FILE_SEPARATOR);
 					if (index > 0) {
+						if (DupeControl.contains(fileStr)) {
+							continue;
+						}
+						DupeControl.add(fileStr);
 						TDeployLine deployLine = new TDeployLine(DeployOrgsCount);
 						deployLine.ResourcePath = fileStr.substring(index+5);
 						Integer index2 = deployLine.ResourcePath.lastIndexOf(FILE_SEPARATOR);
@@ -239,19 +286,18 @@ public class Byzak extends JFrame {
 						for (Integer orgindex = DeployOrgsCount-1; orgindex >= 0; orgindex--) {
 							TDeployItem deployItem = deployLine.DeployItems.get(orgindex);
 							deployItem.FullFilePath = WORKSPACE_BASE_PATH + DeployOrganizations.get(orgindex).Directory + FILE_SEPARATOR + "src" + FILE_SEPARATOR + deployLine.ResourcePath;
+							String MetaXmlPath = deployLine.getMetaXmlPath();
+							deployItem.FullMetaXmlPath = (MetaXmlPath != null) ? WORKSPACE_BASE_PATH + DeployOrganizations.get(orgindex).Directory + FILE_SEPARATOR + "src" + FILE_SEPARATOR + MetaXmlPath : null;
 							File resFile = new File(deployItem.FullFilePath);
 							deployItem.IsFileExists = resFile.exists();
 							if (deployItem.IsFileExists) {
-//								pOrgFile->FileContent->LoadFromFile(pOrgFile->FullFilePath);
-//								FileContentPreprocessing(pOrgFile->FileContent, pOrgFile->FullFilePath);
+								deployItem.loadContent();
 								if (orgindex == DeployOrgsCount-1) {
 									deployItem.Matched = true;
 								}
 								else {
-//									TOrgFile *pOrgFileCore = (TOrgFile*) pDeployFile->Orgs->Items[DeployOrgsCount-1];
-//									TStringList *pContentCore = pOrgFileCore->FileContent;
-//									deployItem.Matched = CompareContent(pOrgFile->FileContent, pContentCore);
-									deployItem.Matched = false;
+									TDeployItem itemCore = (TDeployItem) deployLine.DeployItems.get(DeployOrgsCount-1);;
+									deployItem.Matched = deployItem.compareTo(itemCore);
 								}
 							}
 						}
@@ -263,6 +309,7 @@ public class Byzak extends JFrame {
 		tableDeployPlanModel.setRowCount(DeployLines.size() + 1);
 		tableDeployPlan.getColumnModel().getColumn(0).setPreferredWidth(getMinGridWidth() + 6);
 		btnBuildPlan.setEnabled(DeployLines.size() > 0);
+		btnDeployAll.setEnabled(false);
 	}
 
 	private void BuildPlanClick() {
@@ -281,8 +328,8 @@ public class Byzak extends JFrame {
 
 	private void TableDeployClick(MouseEvent event) {
 		JTable target = (JTable) event.getSource();
-		int row = target.getSelectedRow();
-		int column = target.getSelectedColumn();
+		int row = target.rowAtPoint(event.getPoint());
+		int column = target.columnAtPoint(event.getPoint());
 		// Double click on Deploy button
 		if (event.getClickCount() == 2 && target.getRowCount() >= 2 && row == target.getRowCount()-1 && column > 0) {
 			int DeployResourcesCount = DeployOrganizations.get(column-1).DeployResourcesCount;
@@ -290,11 +337,11 @@ public class Byzak extends JFrame {
 				String AntTask = "deploy-" + DeployOrganizations.get(column-1).Directory;
 				String command = DEPLOY_COMMAND.replace("{ANT_SPACE_BASE_PATH}", ANT_SPACE_BASE_PATH).replace("{0}", AntTask);
 //				String[] commands = {"cmd", "/C", "start", ANT_SPACE_BASE_PATH + DEPLOY_COMMAND, AntTask};
-//				String[] commands = command.split("\\s");
+				String[] commands = command.split("\\s");
 				try {
-//					ProcessBuilder builder = new ProcessBuilder(commands);
-//					builder.start();
-					Runtime.getRuntime().exec(command);
+					ProcessBuilder builder = new ProcessBuilder(commands);
+					builder.start();
+//					Runtime.getRuntime().exec(command);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -304,8 +351,43 @@ public class Byzak extends JFrame {
 			}
 		}
 		// Single click on deploy resource
-		if (event.getClickCount() == 1 && event.getButton() == 1 && row > 0 && row <= target.getRowCount()-1 && column > 0) {
-//			textAreaInput.setText("byka");
+		if (event.getClickCount() == 1 && event.getButton() == MouseEvent.BUTTON3 && column > 0 && row >= 0 && row < target.getRowCount()-1) {
+//			target.selectClickedRow !
+			TDeployLine deployLine = DeployLines.get(row);
+			TDeployItem deployItem = deployLine.DeployItems.get(column-1);
+			for (Integer i = 0; i < popupMenu.getSubElements().length; i++) {
+				JMenuItem MenuItem = (JMenuItem) popupMenu.getSubElements()[i];
+				if (MenuItem.getName() == "IncludeExclude") {
+					Boolean IsIncludedToDeploy = deployItem.getIsIncludedToDeploy();
+					MenuItem.setText((IsIncludedToDeploy ? "Exclude " : "Include ") + deployLine.ResourceLabel + (IsIncludedToDeploy ? " from  " : " to ") + DeployOrganizations.get(column-1).Label);
+					PopupMenuFileIndex = row;
+					PopupMenuOrgIndex = column-1;
+				}
+				if (MenuItem.getName() == "CompareWithCore") {
+					MenuItem.setVisible(column < tableDeployPlanModel.getColumnCount()-1);
+				}
+			}
+			popupMenu.show(event.getComponent(), event.getX()+10, event.getY());
+		}
+	}
+
+	private void TablePopupMenuClick(ActionEvent event) {
+		TDeployLine deployLine = DeployLines.get(PopupMenuFileIndex);
+		TDeployItem deployItem = deployLine.DeployItems.get(PopupMenuOrgIndex);
+		JMenuItem MenuItem = (JMenuItem) event.getSource();
+		if (MenuItem.getName() == "IncludeExclude") {
+			Boolean IsIncludedToDeploy = deployItem.getIsIncludedToDeploy();
+			String PopupMenuOperation = IsIncludedToDeploy ? "E" : "I";
+			if (PopupMenuOperation == "E") {
+				deployItem.ForceAction = deployItem.Matched;
+			}
+			if (PopupMenuOperation == "I") {
+				deployItem.ForceAction = !(deployItem.Matched);
+			}
+			DeployOrganizations.get(PopupMenuOrgIndex).DeployResourcesCount = 0;
+			tableDeployPlan.repaint();
+		}
+		if (MenuItem.getName() == "CompareWithCore") {
 		}
 	}
 
@@ -388,7 +470,7 @@ public class Byzak extends JFrame {
 
 		DeployOrganizations.get(orgindex).DeployResourcesCount = DeployResourcesCount;
 
-		packagexml.add("    <version>24.0</version>");
+		packagexml.add("    <version>31.0</version>");
 		packagexml.add("</Package>");
 		packagexml.SaveToFile(AntDirectory + FILE_SEPARATOR + "package.xml");
 	}
