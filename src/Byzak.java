@@ -300,6 +300,7 @@ public class Byzak extends JFrame {
 									deployItem.Matched = deployItem.compareTo(itemCore);
 								}
 							}
+							DeployOrganizations.get(orgindex).DeployResourcesCount = 0;
 						}
 						DeployLines.add(deployLine);
 					}
@@ -310,6 +311,7 @@ public class Byzak extends JFrame {
 		tableDeployPlan.getColumnModel().getColumn(0).setPreferredWidth(getMinGridWidth() + 6);
 		btnBuildPlan.setEnabled(DeployLines.size() > 0);
 		btnDeployAll.setEnabled(false);
+		tableDeployPlan.repaint();
 	}
 
 	private void BuildPlanClick() {
