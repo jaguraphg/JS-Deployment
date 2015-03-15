@@ -28,10 +28,8 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
@@ -50,7 +48,7 @@ public class Byzak extends JFrame {
 
 	private static String WORKSPACE_BASE_PATH;
 	private static String ANT_SPACE_BASE_PATH;
-	private static String DEPLOY_DEV_ORG_DIR;
+	private static String DEPLOY_SOURCE_ORG_PATH;
 	private static String DEPLOY_COMMAND;
 
 	private static String FILE_SEPARATOR;
@@ -91,6 +89,7 @@ public class Byzak extends JFrame {
 		DeployOrganizations = new ArrayList<TDeployOrganization>();
 		DeployOrganizations.add(new TDeployOrganization("P:4.356", "zRecruiting-Patch-4.356"));
 		DeployOrganizations.add(new TDeployOrganization("P:4.400", "zRecruiting-Patch-4.400"));
+		DeployOrganizations.add(new TDeployOrganization("DEV", "JS-Recruiting-Jagura2-DEV"));
 		DeployOrganizations.add(new TDeployOrganization("CORE", "JS-Recruiting-CORE"));
 
 		FILE_SEPARATOR = System.getProperty("file.separator");
@@ -108,7 +107,7 @@ public class Byzak extends JFrame {
 			);
 			WORKSPACE_BASE_PATH = props.getProperty(osPrefix + "WORKSPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
 			ANT_SPACE_BASE_PATH = props.getProperty(osPrefix + "ANT_SPACE_BASE_PATH").trim().replace("~", System.getProperty("user.home"));
-			DEPLOY_DEV_ORG_DIR = props.getProperty(osPrefix + "DEPLOY_DEV_ORG_DIR").trim();
+			DEPLOY_SOURCE_ORG_PATH = props.getProperty(osPrefix + "DEPLOY_SOURCE_ORG_PATH").trim();
 			DEPLOY_COMMAND = props.getProperty(osPrefix + "DEPLOY_COMMAND").trim();
 		}
 		catch (Exception e) {
@@ -117,7 +116,7 @@ public class Byzak extends JFrame {
 		Boolean isApplicationConfigured = Beans.isDesignTime() || (
 			WORKSPACE_BASE_PATH != null &&
 			ANT_SPACE_BASE_PATH != null &&
-			DEPLOY_DEV_ORG_DIR != null &&
+			DEPLOY_SOURCE_ORG_PATH != null &&
 			DEPLOY_COMMAND != null
 		);
 
@@ -126,10 +125,10 @@ public class Byzak extends JFrame {
 		setBounds(100, 100, 875, 406);
 
 		String TextAreaInitialContent = "";
-		String TextAreaInitialContentDefault = "U /Dev-Base/src/classes/candidateBulkAction.cls\r\nU /Dev-Base/src/classes/candidateBulkAction.cls-meta.xml\r\nU /Dev-Base/src/classes/s_CTagController.cls\r\nU /Dev-Base/src/classes/s_CTagController.cls-meta.xml\r\nU /Dev-Base/src/components/s_Result.component\r\n\r\nU /Dev-Base/src/labels/CustomLabels.labels\r\nU /Dev-Base/src/objects/Contact.object\r\n\r\nU /Dev-Base/src/pages/AddTagsCandidate.page\r\nU /Dev-Base/src/pages/AddTagsCandidate.page-meta.xml\r\nU /Dev-Base/src/pages/StoryBoardReplica.page\r\nU /Dev-Base/src/pages/s_CTag.page-meta.xml\r\nU /Dev-Base/src/staticresources/SSearch.resource\r\n";
+		String TextAreaInitialContentDefault = "D:\\git\\staffingcore\\src\\classes\\candidateBulkAction.cls\r\nD:\\git\\staffingcore\\src\\classes\\candidateBulkAction.cls-meta.xml\r\nD:\\git\\staffingcore\\src\\classes\\s_CTagController.cls\r\nD:\\git\\staffingcore\\src\\classes\\s_CTagController.cls-meta.xml\r\nD:\\git\\staffingcore\\src\\components\\s_Result.component\r\n\r\nD:\\git\\staffingcore\\src\\labels\\CustomLabels.labels\r\nD:\\git\\staffingcore\\src\\objects\\Contact.object\r\n\r\nD:\\git\\staffingcore\\src\\pages\\AddTagsCandidate.page\r\nD:\\git\\staffingcore\\src\\pages\\AddTagsCandidate.page-meta.xml\r\nD:\\git\\staffingcore\\src\\pages\\StoryBoardReplica.page\r\nD:\\git\\staffingcore\\src\\pages\\s_CTag.page-meta.xml\r\nD:\\git\\staffingcore\\src\\staticresources\\SSearch.resource\r\n";
 		try {
 			String ClipboardString = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-			TextAreaInitialContent = (ClipboardString.contains("/Dev-Base/src/")) ? ClipboardString : TextAreaInitialContentDefault;
+			TextAreaInitialContent = (ClipboardString.contains("src\\")) ? ClipboardString : TextAreaInitialContentDefault;
 		}
 		catch (Exception e) {
 			TextAreaInitialContent = TextAreaInitialContentDefault;
@@ -530,7 +529,7 @@ public class Byzak extends JFrame {
 		if (dir.exists() == false || dir.isDirectory() == false) {
 			dir.mkdir();
 		}
-		File source = new File(WORKSPACE_BASE_PATH + DEPLOY_DEV_ORG_DIR + FILE_SEPARATOR + "src" + FILE_SEPARATOR + res);
+		File source = new File(DEPLOY_SOURCE_ORG_PATH + "src" + FILE_SEPARATOR + res);
 		File target = new File(ANT_SPACE_BASE_PATH + orgDir + FILE_SEPARATOR + res);
 		try {
 			Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
